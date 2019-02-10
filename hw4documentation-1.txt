@@ -1,0 +1,323 @@
+%---------------make_column_3---------------%
+%Function.  Arguments: your list, your lists, your term, your accumulator.   
+%Format: make_column(Column, Rows, N, Accumulator)
+%Test Case: make_column(Col,[[2, 3, 4, 5, 1], [5, 4, 1, 3, 2], [4, 1, 5, 2, 3], [1, 2, 3, 4, 5], [3, 5, 2, 1, 4]], 1, []). Should return [2, 5, 4, 1, 3]
+%Test Case2: make_column(Col,[[2, 3, 4, 5, 1], [5, 4, 1, 3, 2], [4, 1, 5, 2, 3], [1, 2, 3, 4, 5], [3, 5, 2, 1, 4]], 5, []). Should return [1, 2, 3, 5, 4].
+%Notes: Appears to work properly.  Will give you one top column, it appears.  Also, it appears you always need some kind of accumulator.  
+
+make_column(Col, [], _, Col).
+make_column(Col, [Row|Rows], N, Acc):-
+	nth(N, Row, E),
+	append(Acc, [E], L),
+	make_column(Col, Rows, N, L). 
+
+%---------------make_row--------------- %
+%Function.  Arguments: your size, your row
+%Format: make_row(N, L)
+%Test Case: make_row(5, L).  Should return some iteration of 1 2 3 4 5
+
+make_row(N,L):-
+	length(L, N),
+	fd_domain(L, 1, N),
+	fd_all_different(L).
+	fd_labeling(L).
+
+%---------------make_rows---------------%
+%Function.  Arguments: your rows, your list size, your size, Acc  
+%Format: make_rows(Rows, Perm, Term, Acc)
+%Test Case: make_rows(List, 5, 5, []).
+
+
+make_rows(Rows, _, 0, Rows).
+make_rows(Rows, Perm, N, Acc):-
+ 	N1 is N-1, make_row(Perm, L),
+	append(Acc, [L], A), 
+        make_rows(Rows, Perm, N1, A).
+
+%---------------make_grid---------------%
+%Function.  Arguments: Your new grid, your current grid (from make_rows), your perm term, your regular term, and your accumulator
+%Format: make_grid(Grid, Rows, Perm, Term, Acc)
+%Test Case:
+
+make_grid(Grid, _, 0, Grid).
+make_grid(Grid, Rows, N, Acc):-
+	make_column(Col, Rows, N, L), 
+	fd_all_different(Col),
+	append(Acc, Col, A),
+	N1 is N-1,
+	make_grid (A, Rows, N-1, A).  
+
+%---------------the_Grid---------------%
+%Wrapper function for make_grid, make_rows, and make_grid.  Arguments: Your new grid, your current grid (from make_rows), your perm 
+%Format: the_Grid(Grid, N)
+
+the_Grid(Grid, N):-
+	make_rows(Rows, N, N, []),
+	make_grid(Matrix, Rows, N, Acc),
+	fd_labeling(Matrix). 
+
+
+%----------------------COUNTING-----------------------%
+
+
+%---------------row_count_2---------------%
+
+%Function.  Arguments: your count, your row, your max value, Count.   
+%Test Case: row_count(X,[2, 3, 4, 5, 1], 1, 0).  Should return 4.
+%Test Case2: row_count(X, [5, 4, 1, 3, 2], 1, 0). Should return 1.
+%Notes: Appears to work consistently. Currently stored in count.pl
+
+
+row_count(A, [_|[]], _, A). %the end case
+row_count(A, [X|Z], Y, C):- %the increasing case
+	X>Y, C1 is C+1, row_count(A, Z, X, C1).
+row_count(A ,[_|Z], Y, C):- %the non-increa
+sing case
+	row_count(A, Z, Y, C).
+
+
+row_count(A, [], _, A).
+row_count(A, [X|Z], Y, C):-
+        X>Y, C1 is C+1, row_count(A, Z, X, C1).
+row_count(A ,[_|Z], Y, C):-
+        row_count(A, Z, Y, C).
+
+%---------------edge_count---------------%
+%Function: Arguments: your count, your Rows, your accumulator
+%Test Case: edge_count(Count, [[2,3,4,5,1], [5,4,1,3,2], [4,1,5,2,3],[1,2,3,4,5],[3,5,2,1,4]], []).  Should return: [4, 1, 2, 5, 2]
+
+edge_count(Count, [], Count).
+edge_count(Count, [Row|Rows], Acc):-
+	row_count(X, Row, 0, 0),
+	append(Acc, [X], A),
+	edge_count(Count, Rows, A).
+
+
+%---------------reverse_count---------------%
+%Function. Arguments: your reversed, your Rows, your accumulator
+%Test Case: reverse_count(Reversed, [[2,3,4,5,1], [5,4,1,3,2], [4,1,5,2,3],[1,2,3,4,5],[3,5,2,1,4]], []).  Should return [1,5,4,3,2], [2,3,1,4,5],[3,2,5,1,4], [5, 4, 3, 2, 1], [4, 1, 2, 5, 3]
+
+reverse_count(Reversed, [], Reversed).
+reverse_count(Reversed, [Row|Rows], Acc):-
+        reverse(Row, R1),
+        row_count(X, R1, 0, 0),
+        append(Acc, [X], A),
+        reverse_count(Reversed, Rows, A).
+
+%---------------transpose---------------%
+%Function.  Arguments: Col, Rows, Term, Acc
+%Format: make_grid(Col, Rows,Term, Acc)
+%Test Case:transpose(Cols, [[2,3,4,5,1], [5,4,1,3,2], [4,1,5,2,3],[1,2,3,4,5],[3,5,2,1,4]], 5, []).
+
+transpose(Cols, _, 0, Cols).
+transpose(Cols, Rows, N, Acc):-
+	make_column(Col, Rows, N, []),
+	append([Col], Acc, A),
+	N1 is N-1,
+	transpose(Cols, Rows, N1, A).
+
+
+%---------------total_edge---------------%
+%Function. Arguments: Matrix, count(R1, R2, R3, R4)
+%Format: total_edge(Matrix, count(R1, R2, R3, R4) )
+%Test Case:  total_edge(5, [[2,3,4,5,1], [5,4,1,3,2], [4,1,5,2,3],[1,2,3,4,5],[3,5,2,1,4]], count(R1, R2, R3, R4)).
+
+total_edge(N, Matrix, count(R1, R2, R3, R4)):-
+	edge_count(R3, Matrix, Acc),
+	reverse_count(R4, Matrix, Acc),
+	transpose(Reverse, Matrix, N, Acc),
+	edge_count(R1, Reverse, Acc),
+	reverse_count(R2, Reverse, Acc).  
+
+%----------------------TOWER-----------------------%
+%Function. Arguments: N, T, C
+
+tower(N, T, C):-
+	the_Grid(T, N),
+	total_edge(N, T, C).
+
+
+
+
+%----------------------Plain-----------------------%
+%Functions: your size, your row
+make_row(N,L):-
+	
+
+
+
+%Function.  Arguments: your size, your row
+%Format: make_row(N, L)
+%Test Case: make_row(5, L).  Should return some iteration of 1 2 3 4 5
+
+make_row(N,L):-
+	length(L, N),
+	fd_domain(L, 1, N),
+	fd_all_different(L).
+	fd_labeling(L).
+
+
+
+
+
+
+
+
+
+
+transpose(Cols, _, 0, Acc).
+transpose(Cols, Rows, N, Acc):-
+	make_column(Col, Rows, N, B),
+	append(Acc, Col, A),
+	N1 is N-1,
+	transpose(Cols, Rows, N1, A).
+
+
+
+
+[[1,2,3,5,4],[5,3,2,4,1],[4,1,5,3,2],[3,4,1,2,5],[2,5,4,1,3]]
+
+edge_count(Count, [[1,2,3,5,4],[5,3,2,4,1],[4,1,5,3,2],[3,4,1,2,5],[2,5,4,1,3]], []). 
+
+make_grid(Grid, Rows, N, Acc):
+
+
+make_grid(Grid, _, 0, Grid).
+make_grid(Grid, Rows, N, Acc):-
+	make_column(Col, Rows, N, L), 
+	fd_all_different(Col),
+	append(Acc, Col, A),
+	N1 is N-1,
+	make_grid (A, Rows, N-1, A).  
+
+
+reverse
+
+
+
+left(Count, [], Count).
+left(Count, [Row|Rows], Acc):-
+	row_count(X, Row, 1, 0),
+	append(Acc, Col, A)
+
+
+row_count(X, [1,2,3,4,5], 1, 0)
+
+
+
+row_count_2
+
+
+reverse_edge(Reversed, [], Reversed).
+reverse_edge(Reversed, [Row|Rows], Acc):-
+	reverse(Row, R1),
+	edge_count(row_count
+
+    append(Acc, [R1], Rev),
+	reverse_edge(Acc, Rows, Acc).
+
+
+
+
+The issue: 
+
+[tower].
+trace. the_Grid(M, 1).
+
+
+
+
+
+
+ Redo: the_Grid([[1]],1) ? 
+     11    2  Redo: make_grid([[1]],[[1]],1,1,[]) ? 
+     23    3  Redo: make_grid([[1]],[[1]],1,0,[[1]]) ? 
+     24    4  Call: make_column(_684,[[1]],0,_643) ? 
+     24    4  Exit: make_column(_686,[[1]],0,_643) ? 
+     25    4  Call: fd_domain(_710,1,1) ? 
+     25    4  Exit: fd_domain(1,1,1) ? 
+     26    4  Call: '$catch'(fd_all_different(1),_699,fail,make_grid,5,true) ? 
+     27    5  Call: fd_all_different(1) ? 
+     27    5  Exception: fd_all_different(1) ? 
+     26    4  Fail: '$catch'(fd_all_different(1),_699,fail,make_grid,5,true) ? 
+     24    4  Redo: make_column(_686,[[1]],0,_643) ? 
+     25    5  Call: 0>0 ? 
+     25    5  Fail: 0>0 ? 
+     24    4  Fail: make_column(_672,[[1]],0,_643) ? 
+     23    3  Fail: make_grid([_290],[[1]],1,0,[[1]]) ? 
+     21    3  Redo: append([],[[1]],[[1]]) ? 
+     21    3  Exit: append([_587],[[1]],[_587,[1]]) ? 
+     22    3  Call: _633 is 1-1 ? 
+     22    3  Exit: 0 is 1-1 ? 
+     23    3  Call: make_grid([_290],[[1]],1,0,[_587,[1]]) ? 
+     24    4  Call: make_column(_688,[[1]],0,_647) ? 
+     24    4  Exit: make_column(_690,[[1]],0,_647) ? 
+
+
+
+
+
+
+
+
+
+      1    1  Redo: the_Grid([[1,2],[2,1]],2) ? 
+     22    2  Redo: make_grid([[1,2],[2,1]],[[2,1],[1,2]],2,2,[]) ? 
+     38    3  Redo: make_grid([[1,2],[2,1]],[[2,1],[1,2]],2,1,[[1,2]]) ? 
+     54    4  Redo: make_grid([[1,2],[2,1]],[[2,1],[1,2]],2,0,[[1,2],[2,1]]) ? 
+     55    5  Call: make_column(_1517,[[2,1],[1,2]],0,_1476) ? 
+     55    5  Exit: make_column(_1519,[[2,1],[1,2]],0,_1476) ? 
+     56    5  Call: fd_domain(_1543,1,2) ? 
+     56    5  Exit: fd_domain(_#104(1..2),1,2) ? 
+     57    5  Call: '$catch'(fd_all_different(_#104(1..2)),_1532,fail,make_grid,5,true) ? 
+     58    6  Call: fd_all_different(_#104(1..2)) ? 
+     58    6  Exception: fd_all_different(_#104(1..2)) ? 
+     57    5  Fail: '$catch'(fd_all_different(_#104(1..2)),_1532,fail,make_grid,5,true) ? 
+     55    5  Redo: make_column(_1519,[[2,1],[1,2]],0,_1476) ? 
+     56    6  Call: 0>0 ? 
+     56    6  Fail: 0>0 ? 
+     55    5  Fail: make_column(_1505,[[2,1],[1,2]],0,_1476) ? 
+     54    4  Fail: make_grid([_581,_583],[[2,1],[1,2]],2,0,[[1,2],[2,1]]) ? 
+     38    3  Fail: make_grid([_581,_583],[[2,1],[1,2]],2,1,[[1,2]]) ? 
+     22    2  Fail: make_grid([_581,_583],[[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]],2,2,_586) ? 
+      2    2  Redo: make_rows([[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]],2,2,[]) ? 
+     11    3  Redo: make_rows([[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]],2,1,[[_#0(1..2),_#17(1..2)]]) ? 
+     20    4  Redo: make_rows([[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]],2,0,[[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]]) ? 
+     21    5  Call: 0>0 ? 
+     21    5  Fail: 0>0 ? 
+     20    4  Fail: make_rows(_556,2,0,[[_#0(1..2),_#17(1..2)],[_#46(1..2),_#63(1..2)]]) ? 
+     11    3  Fail: make_rows(_318,2,1,[[_#0(1..2),_#17(1..2)]]) ? 
+      2    2  Fail: make_rows(_82,2,2,[]) ? 
+      1    1  Fail: the_Grid(_23,2) ? 
+
+
+%-----------speedup--------------%
+speedup(R):-
+	statistics(cpu_time, [A,_]),
+	tower(N, T, C),
+	statistics(cpu_time, [A,_]),
+
+	statistics(cpu_time, [B,_]),
+	plain(N, T, C),
+	statistics(cpu_time, [B,_]),
+	
+	R is B/A.
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+

@@ -1,0 +1,929 @@
+
+
+
+
+1. Write a function subset a b that returns true iff a⊆b, i.e., if the set represented by the list a is a subset of the set represented by the list b. Every set is a subset of itself. This function should be generic to lists of any type: that is, the type of subset should be a generalization of 'a list -> 'a list -> bool.
+
+open List
+  let rec subset a b =
+        match a with
+        | [] -> true
+        | h :: t ->
+        	if List.mem h b then
+        		subset t b
+        	else false;; 
+---------------
+
+Possible Test Cases:
+Empty on one side
+Empty on both sides
+Regular test case
+very long test case?
+---------------------------------------
+
+2. Write a function equal_sets a b that returns true iff the represented sets are equal.
+
+open List
+  let rec equal_sets a b =
+        (subset a b) && (subset b a);;
+
+---------------
+
+Possible Test Cases:
+Empty on one side
+Empty on both sides
+Regular test case
+very long test case?
+---------------------------------------
+
+3. Write a function set_union a b that returns a list representing a∪b.
+the uniq function: returns a list of elements that are not in e
+
+let rec uniq d e =
+	match d with 
+	| [] -> e		
+	| h :: t ->
+		if not(mem h e) then 
+			uniq t (h::e)
+			else
+			uniq t e
+
+let set_union a b =		
+	List.sort compare (uniq (uniq a []) (uniq b [])) 
+
+
+---------------
+Possible Test Cases:
+Base case -> two completely unrelated sets
+Empty on one side
+Empty on one side, duplicates on the other
+Empty on both sides
+Duplicates on one side
+Duplicates on both sides
+The exact SAME duplicates on both sides
+Different types of lists
+
+---------------------------------------
+
+4. Write a function set_intersection a b that returns a list representing a∩b.
+
+
+let rec inters d e f =
+	match d with 
+	| [] -> f		
+	| h :: t ->
+		if List.mem h e then 
+			inters t e (h::f)
+		else
+			inters t e f
+
+
+let set_intersection a b = 
+	List.sort compare (inters (uniq a []) (uniq b []) []);;
+
+
+---------------
+Possible Test Cases:
+Base case -> two completely unrelated sets
+Empty on one side
+Empty on one side, duplicates on the other
+Empty on both sides
+Duplicates on one side
+Duplicates on both sides
+The exact SAME duplicates on both sides
+Different types of lists
+
+
+---------------------------------------
+5. Write a function set_diff a b that returns a list representing a−b, that is, the set of all members of a that are not also members of b.
+
+
+let rec comp d e f =
+	match d with 
+	| [] -> f		
+	| h :: t ->
+		if not(List.mem h e) then 
+			comp t e (h::f)
+		else		comp t e f
+
+let set_diff a b =
+	List.sort compare ( comp (uniq a []) (uniq b[]) [] );;
+
+---------------
+
+Possible Test Cases:
+
+
+---------------------------------------
+
+6. Write a function computed_fixed_point eq f x that returns the computed fixed point for f with respect to x, assuming that eq is the equality predicate for f's domain. A common case is that eq will be (=), that is, the builtin equality predicate of OCaml; but any predicate can be used. If there is no computed fixed point, your implementation can do whatever it wants: for example, it can print a diagnostic, or go into a loop, or send nasty email messages to the user's relatives.
+
+
+let rec computed_fixed_point eq f x = 
+	if eq x (f x) then x
+	else computed_fixed_point eq f (f x) ;;
+
+---------------------------------------
+
+7. Write a function computed_periodic_point eq f p x that returns the computed periodic point for f with period p and with respect to x, assuming that eq is the equality predicate for f's domain.
+
+x - f(f x)
+f x = f(f(f x))
+
+let rec compute eq f p x e = 
+	if (=) (List.length e) p  then List.hd e
+		else compute eq f p (f x) ((f x)::e) ;;
+
+let rec periodic_point eq f p x  =
+	match p with
+	| 0 -> x
+	| _ -> 
+		if eq x (compute eq f p x []) then x
+		else periodic_point eq f p (f x) ;;
+
+
+
+
+periodic_point (=) (fun x -> x *. x -. 1.) 2 0.5  = -1.
+
+periodic_point (=) (fun x -> x *. x -. 1.) 2 0.5 [] = -1.
+
+
+List.hd (compute f p x []) 
+
+let rec periodic_point eq f p x e =
+	if eq x List.hd (compute eq f p x []) then x
+	else (periodic_point eq f p (f x) ((f x)::e)) ;;
+
+
+let computed_periodic_point eq f p x = 
+	if (=) p 0 then x
+	else periodic_point eq f p x ([]);;
+
+
+
+
+let rec periodic_point eq f p x e =
+	if (=) (List.length e) p  then e
+	else (computed_fixed_point eq f x) :: e ;;
+
+
+
+let computed_periodic_point eq f p x = 
+	if (=) p 0 then x
+	else List.hd(periodic_point eq f p x []);;
+
+
+
+
+let rec computed_fixed_point eq f x = 
+	if (eq x (f x)) then x
+	else (print_float x; computed_fixed_point eq f (f x)) ;;
+
+computed_fixed_point (=) (fun x -> x *. x -. 1.) 0.5
+
+
+
+---------------------------------------
+8. Write a function while_away s p x that returns the longest list [x; s x; s (s x); ...] such that p e is true for every element e in the list. That is, if p x is false, return []; otherwise if p (s x) is false, return [x]; otherwise if p (s (s x)) is false, return [x; s x]; and so forth. For example, while_away ((+) 3) ((>) 10) 0 returns [0; 3; 6; 9]. Your implementation can assume that p eventually returns false.
+
+let rec way s p x e =
+	if not (p x) then e
+	else way s p (s x) (x::e);;
+
+let while_away s p x = 
+	List.sort compare (way s p x []);;
+
+---------------------------------------
+9. Write a function rle_decode lp that decodes a list of pairs lp in run-length encoding form. The first element of each pair is a nonnegative integer specifying the repetition length; the second element is the value to repeat. For example, rle_decode [2,0; 1,6] should return [0; 0; 6] and rle_decode [3,"w"; 1,"x"; 0,"y"; 2,"z"] should return ["w"; "w"; "w"; "x"; "z"; "z"].
+
+let rec pair a e = 
+	if (=) (List.length e) (fst a) then e
+	else pair a ((snd a)::e);;
+
+let rec decode lp mp =
+	match lp with
+	| [] -> mp
+	| h:: t -> decode t (List.append mp (pair h []));;
+
+let rle_decode lp =
+	decode lp [];;
+
+-------------
+Why the fuck do these not work.
+
+let rec pair a e = 
+	match (List.length e) with 
+	| (fst a) -> e
+	| _ -> pair a ((snd a)::e);;
+---------------------------------------
+10. OK, now for the real work. Write a function filter_blind_alleys g that returns a copy of the grammar g with all blind-alley rules removed. This function should preserve the order of rules: that is, all rules that are returned should be in the same order as the rules in g.
+
+A grammar consists of a list of pairs, which themselves consist of nonterminal symbols and a list of terminal/nonterminal symbols 
+
+-------------
+//type def right here
+
+type ('nonterminal, 'terminal) symbol =
+  | N of 'nonterminal
+  | T of 'terminal
+
+-------------
+
+//meant to handle rhs (for basic run of terminal types)
+let term symb = 
+	match symb with
+	| T (_) -> true
+	| N (_) -> false ;;
+
+-------------
+
+//meant to handle rules list
+
+let rec first_run g e =
+	match snd (List.hd g) with
+	| h::t ->
+		if (List.for_all term h) then first_run t (List.append e (List.hd g))
+		else first_run t e
+-----
+
+let rec first_run g e =
+	match g with
+	| h::t ->
+		if (List.for_all term snd (h)) then first_run t (List.append e (List.hd g))
+		else first_run t e
+-----
+
+let rec first_run g e =
+	match snd(List.hd(snd g)) with
+	| h::t ->
+		if (List.for_all term h) then first_run t (List.append e (List.hd g))
+		else first_run t e
+-----
+let rec first_run g e =
+	match snd g with
+	| h::t ->
+		if List.for_all term (List.hd (snd h)) then first_run t
+
+-----
+
+let rec first_run rs good =
+	match rs with
+	| [] -> good
+	| h::t ->
+		if List.for_all term (snd h) then first_run t (h::good)
+		else first_run t good;;
+
+
+
+-------------
+let rec keyword g e =
+	match g with 
+	| [] -> e
+	| h::t -> keyword t (List.append (fst h) e )
+-----
+
+//Create list of types
+
+let rec keyword rs extra =
+	match rs with 
+	| [] -> extra
+	| h::t -> keyword t (List.append (fst h) extra );;
+	
+-------------
+
+let non rule e =
+	match rule with
+	| N (x) -> 
+		if List.mem x e then true else false
+	| _ -> false;;
+
+-------------
+
+let rec run rs good =
+	match rs with
+	| [] -> good
+	| h::t ->
+		if List.for_all non (snd h) then run t (h::good)
+		else run t e;;
+
+
+
+
+============================
+//Create list of types
+//run this on your good list to create initial goodKey (approved right-hand sides)
+
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t (List.append (fst h) goodKey);;
+
+//basic for checking if a symbol is valid
+
+let non symb goodKey =
+	if (List.mem symb goodKey || term symb) then true else false;;
+
+//pass in snd of rule.  Check to see if symbol list is valid, thus if rule is valid.
+
+let rec validrule symblist goodKey =
+	match symblist with
+	| [] -> true
+	| h::t -> if (non h goodKey) then true && (validrule t goodKey) else false;;
+	
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t (List.append (fst h) goodKey) (h::goodList) else app t goodKey goodList;;
+
+//the equivalent of fixed point!
+let rec runthrough app rs goodKey goodList =
+	if equal_sets rs (app rs goodKey goodList) then rs
+	else runthrough app (app rs goodKey goodList) goodKey goodList;;
+
+let filter_blind_alleys g  =
+	let goodList = first_run g [] in
+	let goodKey = keyword goodList [] in
+	runthrough app (snd g) goodKey goodList;;
+	 
+=================================================
+=================================================
+=================================================
+
+
+TEST!
+
+(* basic type definition *)
+type ('nonterminal, 'terminal) symbol =
+  | N of 'nonterminal
+  | T of 'terminal
+
+
+(*if takes in set d and empty set e, returns version of set d with unique elements*)
+let rec uniq d e =
+	match d with 
+	| [] -> e		
+	| h :: t ->
+		if not(mem h e) then 
+			uniq t (h::e)
+			else
+			uniq t e
+
+
+(* helper function for equal sets *)
+let rec subset a b =
+        match a with
+        | [] -> true
+        | h :: t ->
+        	if List.mem h b then
+        		subset t b
+        	else false;; 
+
+
+(* Takes in to sets (lists) and compares them *)
+let rec equal_sets a b =
+       (subset a b) && (subset b a);;
+
+(* meant to handle rhs for basic run of terminal types - takes in a symbol, outputs true if terminal, false if nonterminal*)
+let term symb = 
+	match symb with
+	| T (_) -> true
+	| N (_) -> false ;;
+
+(*takes in list of rules  - rs - then outputs the initial 'goodList', a list of approved rules*)
+let rec first_run rs goodList =
+	match rs with
+	| [] -> goodList
+	| h::t ->
+		if List.for_all term (snd h) then first_run t (h::goodList)
+		else first_run t goodList;;
+
+(*takes in a list of rules, then outputs an initial 'goodKey', a list of lhs.  Meant to be run on goodList)
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t (List.append (fst h) goodKey);;
+
+(*basic for checking if a symbol is valid, regardless of terminal/nonterminal type)
+let non symb goodKey =
+	if (List.mem symb goodKey || term symb) then true else false;;
+
+(*pass in the rhs of a rule, to check if each member of rhs is valid.  Output true if total rule is valid*)
+let rec validrule symblist goodKey =
+	match symblist with
+	| [] -> true
+	| h::t -> if (non h goodKey) then true && (validrule t goodKey) else false;;
+
+(*Check if a rule is valid, if so add its rhs to goodKey, add the rule itself to goodList*)
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t (List.append (fst h) goodKey) (h::goodList) else app t goodKey goodList;;
+
+(*the equivalent of fixed point! takes in rs, and applies app until rs = app(rs) *)
+let rec runthrough app rs goodKey goodList =
+	if equal_sets rs (app rs goodKey goodList) then rs
+	else runthrough app (app rs goodKey goodList) goodKey goodList;;
+
+(*first draft - currently serves as an assembling function for runthrough and outputs a list of valid rules (goodList) - there should be duplcates*)
+
+let filter_blind_alleys g  =
+	let goodList = first_run g [];
+	let goodKey = keyword goodList [];
+	runthrough app (snd g) goodKey goodList;;
+
+
+
+
+
+
+	
+=================================================
+
+
+(* keyword (first_run g [] goodKey *)
+
+
+
+let rec computed_fixed_point eq f x = 
+	if eq x (f x) then x
+	else computed_fixed_point eq f (f x) ;;
+
+
+let rec compute eq f p x e = 
+	if (=) (List.length e) p  then List.hd e
+		else compute eq f p (f x) ((f x)::e) ;;
+
+let rec periodic_point eq f p x  =
+	match p with
+	| 0 -> x
+	| _ -> 
+		if eq x (compute eq f p x []) then x
+		else periodic_point eq f p (f x) ;;
+
+
+
+let rec computed_fixed_point eq f x = 
+	if eq x (f x) then x
+	else computed_fixed_point eq f (f x) ;;
+
+
+let non rule e =
+	match rule with
+	| N (x) -> 
+		if List.mem x e then true else false
+	| _ -> false;;
+
+
+
+//given a list, check all within list to see if all are in goodkey
+let rec keyCheck rule goodKey goodList =
+	match rule with
+	| [] -> goodList
+	| h::t -> 
+		if List.for_all symb (snd h) || 
+	
+
+
+let rec run rs goodkey goodList=
+	match rs with
+	| [] -> goodList
+	| h::t ->
+		if List.for_all non (snd h) then run t (h::good)
+		else run t good;;
+
+
+
+let rec computed_fixed_point eq f x = 
+	if eq x (f x) then x
+	else computed_fixed_point eq f (f x) ;;
+
+
+
+
+
+(* this one gets run through first to get the initial goodList/badList)
+
+let nice rule goodList  =
+	if List.mem rule goodList
+
+let adder rules good
+
+let rec computed_fixed_point eq f x = 
+	if eq x (f x) then x
+	else computed_fixed_point eq f (f x) ;;
+
+
+Okay.  
+First, if your goodList is empty sort through all the rules - the ones that consist of all terminal symbols - to add to your good list.
+Then, we get to run through all the rules again:
+	There should be no more rules consisting of just terminal symbols.  Then, for each rule, check the second element (the list), and go through all of these to check if the rule appear in the second....  That is, does everything that equal the first rule? if so, add to list.    
+Then we repeat that.  Over and over again. 
+
+
+ 
+
+
+
+Nectr
+
+Aight, what you're going to do is generate 
+
+
+
+
+
+
+
+type ('nonterminal, 'terminal) symbol =
+    | N of 'nonterminal
+    | T of 'terminal
+
+let filter_blind_alleys g
+	
+
+
+let rule terminal 
+	match rule with
+	| [] -> terminal
+	| h::t -> 
+		if eq h T(_)
+		List.append terminal
+
+List of pairs
+	
+
+
+
+
+
+List.for_all term [T"$"; N Expr]
+
+
+
+
+(* An example grammar for a small subset of Awk.  *)
+
+type awksub_nonterminals =
+  | Expr | Lvalue | Incrop | Binop | Num
+
+let awksub_rules =
+   [Expr, [T"("; N Expr; T")"]; 
+    Expr, [N Num];
+    Expr, [N Expr; N Binop; N Expr];
+    Expr, [N Lvalue];
+    Expr, [N Incrop; N Lvalue];
+    Expr, [N Lvalue; N Incrop];
+    Lvalue, [T"$"; N Expr];
+    Incrop, [T"++"];
+    Incrop, [T"--"];
+    Binop, [T"+"];
+    Binop, [T"-"];
+    Num, [T"0"];
+    Num, [T"1"];
+    Num, [T"2"];
+    Num, [T"3"];
+    Num, [T"4"];
+    Num, [T"5"];
+    Num, [T"6"];
+    Num, [T"7"];
+    Num, [T"8"];
+    Num, [T"9"]]
+
+define grammar:
+	let grammar expr rules =
+
+let awksub_test2 =
+  filter_blind_alleys (
+	Expr,[Expr, [N Num];
+       Expr, [N Expr; N Binop; N Expr];
+       
+	Incrop, [T"++"]; 
+	Incrop, [T"--"];
+       	Binop, [T"+"]; 
+	Binop, [T"-"];
+       Num, [T"0"]; Num, [T"1"]; Num, [T"2"]; Num, [T"3"]; Num, [T"4"];
+       Num, [T"5"]; Num, [T"6"]; Num, [T"7"]; Num, [T"8"]; Num, [T"9"]])
+
+
+
+
+
+
+  = (Expr,[Expr, [N Num];
+      Expr, [N Expr; N Binop; N Expr];
+      Incrop, [T"++"]; Incrop, [T"--"];
+      Binop, [T "+"]; Binop, [T "-"];
+      Num, [T "0"]; Num, [T "1"]; Num, [T "2"]; Num, [T "3"]; Num, [T "4"];
+      Num, [T "5"]; Num, [T "6"]; Num, [T "7"]; Num, [T "8"]; Num, [T "9"]])
+
+
+let matcher word =
+	match word with
+	| "T"-> 666
+	| _ -> 0 ;;
+
+	
+
+
+
+
+list of pairs, apparently.
+
+
+
+	if not (p x) []
+	else while_away( s p 
+
+computed_periodic_point (=) (fun x -> x *. x -. 1.) 1 0.5
+
+
+
+computed_fixed_point (=) (fun x -> x *. x -. 1.) 0.5 
+
+
+
+
+computed_fixed_point (=) (fun x -> x / 2) -1
+
+0 (-1) = -1 
+
+	match p with
+	| 0 -> x
+	| _ -> List.hd(periodic_point eq f x p []);;
+
+
+
+
+
+
+
+(periodic_point eq f x [] (p+1)) with
+	| [] -> 666
+	| h::t -> List.hd(periodic_point eq f x (p+1));;
+	
+
+
+  computed_fixed_point (=) (fun x -> x / 2) (-1)
+
+
+let rec periodic_point eq f x p e =
+	if (eq (List.length e) (p+1) || (p+1) < 0 ) then e
+	else (computed_fixed_point eq f x) :: e ;;
+
+
+let rec periodic_point eq f x p e =
+	if (eq (List.length e) (p+1) || (p+1) < 0 ) then e
+	else (computed_fixed_point eq f x) :: e ;;
+
+ periodic_point 
+
+oc
+
+let computed_periodic_point eq f p x = 
+	match (periodic_point eq f x [] (p+1)) with
+	| [] -> 666
+	| h::t -> List.hd(periodic_point eq f x (p+1));;
+	
+	
+
+
+
+
+let computed_periodic_point_test0 =
+  periodic_point (=) (fun x -> x / 2) 0 (-1) = -1
+
+	
+Introducing UpTo11!  An energy drink to rouse even the laziest of students! We start with a liquid motivation base, and slowly add our choice quality ingredients - a cup of focus, a tablespoon of intensity, a splash of inspiration, a pinch of discipline, and of course, everybody's favorite: caffeine.  The perfect amount to get you moving and keep you moving!  We have several varieties for you to choose from: Original (for those that favor the classics) Insomniac (wake up and stay up!  Will keep you moving for days!), Ingenuity (for our creative types out there), and our brand new flavor, Timelines (last-minute deadline?  Squeeze months out of days and days out of seconds or your money back!)!  Order today!
+
+Heat up for just a dash of deadlines
+
+energy
+
+EarlyBird
+
+
+
+MoveIt
+
+Side effects may vary
+
+
+
+
+
+
+
+
+
+let rec computed_fixed_point eq f x = 
+	match (f x) with 
+	| x -> x
+	| _ -> computed_fixed_point eq f (f x)
+;; 
+	
+
+
+
+let rec computed_fixed_point eq f x = 
+	let a = f x;
+	if eq a x then a
+	else computed_fixed_point eq f a ;;
+
+
+
+;; 
+
+
+lets seeee. Write function uniq_append - takes in a element & list.  If element is not in list, append.  else return list
+
+open List
+let uniq_append (ele:unit) (lis:'unit list) =
+		if not(List.mem ele lis) then begin
+			List.cons ele lis;
+		else
+			ele
+
+Well, generally speaking, we shall probably use 
+let 
+
+
+
+recurse through the entire damn thing.
+iCompute f(x)
+Create a list.  If !(List.mem ele list), add to the list.
+
+
+let computed_fixed_point eq f x  = 
+
+let lis = [];
+let rec computed_fixed_point eq f x = 
+	let a = f x
+	if not (List.mem a lis) then
+		List.cons a lis;
+		computed_fixed_point f a
+	else 
+		a;;
+
+
+
+
+if uniq_append(a lis)
+	computed_fix_point (f a)
+
+
+
+
+
+let rec uniq (d: 'a) (e: 'a list) =
+        	match d with 
+        	| [] -> e
+        	| h :: t ->
+        		if not(List.mem h e) then 
+        			h::e;
+        		uniq t e            
+  ;;
+Error: This expression has type 'a list list
+       but an expression was expected of type 'a list
+       The type variable 'a occurs inside 'a list
+
+
+how to do this...
+
+ 
+let x = [1;2;3;]
+let y = [4;5;6;]
+
+
+
+
+open List
+  let req d (e:'a list) =
+  	match d with 
+  	| [] -> []
+  	| h :: t ->
+  		if not(List.mem h e) then
+  		h::e        
+  		req h e
+  		else req h e;;
+
+//add a sort function to this while you're at it, I 
+
+
+
+
+
+let rec uniq d e =
+		match d with 
+		| [] -> e
+		| h :: t ->
+			if not(List.mem h e) then //check to see if there's more efficient way of using 'uniq'.  Do I need an else?
+				(List.append h e)
+				uniq t e
+			else uniq t e
+	in			
+	uniq (uniq a []) (uniq b [])
+
+
+
+let rec uniq d e =
+		match d with 
+		| [] -> e
+		| h :: t ->
+			if not(List.mem h e) then 
+				h::e;
+			uniq t e
+
+			
+	in			
+
+
+open List
+let rec uniq d e =
+		match d with 
+		| [] -> e
+		| h :: t ->
+			if not(mem h e) then 
+				h::e;
+			uniq t e
+			
+
+open List
+let set_union a b =
+	let rec uniq d e =
+		match d with 
+		| [] -> e
+		| h :: t ->
+			if not(List.mem h e) then //check to see if there's more efficient way of using 'uniq'.  Do I need an else?
+				(List.append h e)
+				uniq t e
+			else uniq t e
+	in			
+	uniq (uniq a []) (uniq b []) //add a sort function to this while you're at it, I suppose.
+
+
+This function has type 'a list -> 'a list -> 'a list
+       It is applied to too many arguments; maybe you forgot a `;'.
+
+	List.sort compare (inters (uniq a [])  (uniq b [])) ) ;;
+
+
+let set_intersection a b = 
+	let c = union (a b)
+	match 
+
+
+
+inters (uniq a []) (uniq b []) 
+
+
+inters (uniq [3;1;3] []) (uniq [1;2;3] []) []
+
+inter
+
+
+inters ( uniq ( [3;1;3] []) ) ( uniq ( [1;2;3] [] ) ) [];;
+
+iff inter 
+
+
+open List
+let set_intersection a b = 
+	let rec inter d e =
+		match d with 
+		| [] -> d
+		| h :: t ->
+			if List.mem h e then 
+				List.append h e;
+			inter t e
+		in
+		inter (inter a []) (inter b []) ;;
+		
+This expression has type 'a list list
+       but an expression was expected of type 'a list
+       The type variable 'a occurs inside 'a list
+
+
+
+
+
+set_intersection d](uniq a []) (uniq b[])
+
+Idea - use the 'uniq' function that you wrote.  if not mem, then append.
+Should be simple enough.  
+
+open List
+let set_diff a b =
+	let c = set_intersection a b
+	
+
+Best case: a!= b.  
+If a is empty, then b.
+If b is empty, then a.
+
+
+brew install rlwrap
+rlwrap ocaml
+
+
+

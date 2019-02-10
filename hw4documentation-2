@@ -1,0 +1,248 @@
+%----------------Plain-------------------------%
+
+
+%------------domain-------------%
+%Function: should output a list of distinct numbers in your domain
+%domain(List, 5, 1, []).
+
+
+domain(Dom, 0, _, Dom):-!.
+domain(List, N, I, Acc):-
+	append(Acc, [I], A),
+	N1 is N-1,
+	I1 is I+1,
+	domain(List, N1, I1, A).
+
+%------------domain_2-------------%
+%Function: should work similarly to domain, except I took out the accumulator.  
+domain_2(Dom, 0, _):-!.
+domain_2(List, N, I ):-
+	append(List, [I], A),
+	N1 is N-1,
+	I1 is I+1,
+	domain_2(A, N1, I1).
+
+
+
+%------------column_check-------------%
+
+column_check(_,0,[]).
+column_check(Prev, N, [H|T):-
+	make_column(List, Prev, N, []),
+	not(member(H, List)),
+	N is N-1,
+ 	column(Prev, N1, T). 
+
+
+%------------plain_rows-------------%
+
+% Arguments: N, Matrix
+%plain_rows(Grid, 5, 1, domain(List, 5, 1, []), []).
+
+
+plain_rows(Grid, N, N, _, Grid).
+plain_rows(Grid, N, I, List, Acc):-
+	permutation(List, Perm),
+	column_check(perm, I, Acc),
+	append(Acc, Perm, A),
+	I1 is I+1, 
+	plain_rows(Grid, N, I, List, Acc). 
+
+%------------plain_grid-------------%
+
+plain_grid(Grid, N):-
+	domain(List, N, 1, []),
+	plain_rows(Grid, N, 1, List, []).
+
+	
+
+%------------column_check_1-------------%
+column_check(_,1,[]).
+column_check([H|_],N,Prev):-
+       N=1, make_column(List, Prev, N, []), \+memberchk(H, List).
+column_check([H|T], N, Prev):-
+        make_column(List, Prev, N, []),
+        \+(memberchk(H, List)),
+        N1 is N-1,
+        column_check(T, N1, Prev).
+
+
+%------------column_check_2-------------%
+%Function: Does exactly what you'd expect.  For every row given, compute each column and check.
+%Needed arguments: Current list, Iterating Term, N, Prev
+%2nd rule: for singleton lists... perhaps?
+
+column_check([], N, N, _).
+column_check([H|T], Iter, N, Prev):-
+        make_column(List, Prev, Iter, []),
+        \+(memberchk(H, List)),
+        Iter1 is Iter+1,
+        column_check(T, Iter1, N, Prev).
+
+
+
+%------------plain-------------%
+%Function: 
+
+plain(N, T, C):-
+	plain_grid(T, N),
+	total_edge(N, T, C).
+
+
+
+
+                                      
+%------------plain_rows-------------%
+
+% Arguments: N, Matrix
+    %Format: plain_rows(Grid, N, Incrementor, Max, AccGrid, Term, Incrementor, Accumulat\
+or
+    % Perm: a permutation.
+
+plain_rows(Grid, _, 0, _, Grid).
+plain_rows(Grid, Max, N, List, Acc):-
+        permutation(List, Perm),
+        column_check(Perm, 1, Max, Acc),
+        append(Acc, [Perm], A),
+        N1 is N-1,
+        plain_rows(Grid, Max, N1, List, A).
+
+%------------plain_grid-------------%
+
+plain_grid(Grid, N):-
+	domain(List, N, 1, []), !,
+                        plain_rows(Grid, N, N, List, []).
+
+
+column_check([], _, _, _).
+column_check([H|T], Iter, N, Prev):-
+        make_column(List, Prev, Iter, []),
+        \+(memberchk(H, List)),
+        Iter1 is Iter+1,
+        column_check(T, Iter1, N, Prev).
+
+
+%-----------------------RE_WRITE------------------------%
+
+
+%------------make_rows-------------%
+
+% Arguments: N, Matrix
+    %Format: plain_rows(Grid, N, Incrementor, Max, AccGrid, Term, Incrementor, Accumulat\
+or
+    % Perm: a permutation.
+
+%Function.  Arguments: your rows, your list size, your size, Acc
+%Format: make_rows(Rows, Perm, Term, Acc)
+%Test Case: make_rows(List, 5, 5, []).
+
+%------------make_rows-------------%
+% Function: makes your grid (no column checking yet, follows essentially same rules as plain).  Format: (Rows, N, Accumulator)
+
+make_rows(Rows, 0, Rows).
+make_rows(Rows, N, Acc):-
+	length(List, N),
+	fd_domain(List, 1, N),
+        fd_all_different(List),
+ 	append(Acc, [List], A),
+        N1 is N-1,
+        make_rows(Rows, N1, A).
+
+%------------grid_check-------------%
+% Function: Essentially checks to see if your entire grid is valid.  Format: (Iterator, N, Grid)
+
+grid_check(N, N, _].
+grid_check(Iter, N, Grid):-
+	make_column(List, Grid, Iter, []),
+	fd_all_different(List),
+	Iter1 is Iter+1,
+	grid_check(Iter1, N, Prev).
+
+%------------tower-------------%
+% Function: duh
+tower(N, T, C):-
+        make_rows(T, N, []),
+	grid_check([H|T], Iter, N, Prev):-
+        total_edge(N, T, C).
+	
+	 
+
+
+
+
+
+make_rows(Grid, _, 0, _, Grid).
+make_rows(Grid, Max, N, List, Acc):-
+	length(List, N),
+	fd_domain(List, 1, N),
+        fd_all_different(List).
+	tower_check(List, 1, Max, Acc),
+        append(Acc, [Perm], A),
+        N1 is N-1,
+        plain_rows(Grid, Max, N1, List, A).
+
+
+plain_rows(Grid, _, 0, _, Grid).
+plain_rows(Grid, Max, N, List, Acc):-
+        permutation(List, Perm),
+        tower_check(Perm, 1, Max, Acc),
+        append(Acc, [Perm], A),
+        N1 is N-1,
+        plain_rows(Grid, Max, N1, List, A).
+
+
+
+
+%--------------------------debugging-----------------------------%
+
+
+%------------make_rows-------------%
+% Function: makes your grid (no column checking yet, follows essentially same rules as p\
+lain).  Format: (Rows, N, Accumulator)
+
+make_rows(Rows, 0, Rows).
+make_rows(Rows, N, Acc):-
+        length(List, N),
+        fd_domain(List, 1, N),
+        fd_all_different(List),
+        append(Acc, [List], A),
+        N1 is N-1,
+        make_rows(Rows, N1, A)
+
+.
+
+%------------grid_check-------------%
+% Function: Essentially checks to see if your entire grid is valid.  Format: (Iterator, \
+N, Grid)
+
+grid_check(_, 0, _).
+grid_check(Iter, N, Grid):-
+        N>0,
+        make_column(List, Grid, Iter, []),
+        fd_all_different(List),
+        Iter1 is Iter+1,
+        N1 is N-1,
+        grid_check(Iter1, N1, Grid1).
+
+
+
+%--------------------------AMBIGUOUS-----------------------------%
+%ambiguous(N, C, T1, T2):-
+
+ambiguous(N, C, T1, T2):-
+	tower(N, T1, C),
+	tower(N, T2, C),
+	T1\=T2.
+
+tower(N, T, C):-
+        the_Grid(T, N),
+        total_edge(N, T, C).
+
+
+
+
+speedup/1, which runs both tower/3 and plain_tower/3
+
+
+
+

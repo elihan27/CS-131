@@ -1,0 +1,35 @@
+
+Let's see.  What are we doing.
+
+We're making a prototype.
+Accepts TCP connection.  Five servers who can talk to each other, should be able to send location.
+
+	IAMAT - client informs Serva where it is.  Cliant id.
+Should be able to respond, name of response, ID of server that got the message, different time sense
+Can always ask for more info
+
+Parse message (if two adjacent newlines, replace with single newline, all trailing newlines are removed, followed by two newlines.
+
+Servers communicate with each other
+Google Plaes.
+Server herd.
+
+
+Notes:
+Eager evaluation: Same thing as greedy evaluation really
+
+yield from: allows you to chain generators (I don't know what this means but I'm sure I'll find out
+	*makes it easy to yield every value from generator
+	Contrasts to YIELD FROM: you technically need an awaitable object: for example, will not accept generator if not flagged as coroutine
+
+
+Remember: async/await != asyncio
+
+Mind: generator-based coroutines can actually pause execution and force something to be sent down to the event loop.
+
+
+Event loop: pretty much the event-based programming concept you learned when you were doing ACM Hack
+Asynchronous programming: pretty much what you think it is.  Execution order is not for suresies known
+Concurrent programming: a thread with concurrent programming does not depend on other threads
+coroutine: object that implements generator methods
+	All coroutines will run in same thread!  Remember that!

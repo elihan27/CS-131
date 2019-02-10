@@ -1,0 +1,61 @@
+
+I didn't do a great job on my code, by which I mean the code itself is
+ unfinished, due to 1) difficulty grasping the concept of matchers 2) the 
+unwillingness to turn in an assignment that would get over 32% off.  The current 
+implementation is based on doubly-recursive functions: basic_deriv and grab, the 
+first of which examines alternative lists, and passes in individual rules to 
+grab, which examines individual elements of the rule and passing in the 'start 
+symbol' that basic_derive examines to determine if the derivation for one 
+element in the fragment has been found.  I suppose I wrote the function like 
+this because I am very familiar with C/C++, which relies on loops; since I 
+couldn't use loops here, I grabbed the closest thing I could, which was 
+recursive functions, and it made sense for them to call each other since the
+ structure of the erivation of the total fragment appeared to be somewhat nested
+ to begin with.   
+
+I started out very simply: I tried to write a matcher that would only 
+successfully match the first element of the fragment, believing that once I 
+successfully matched one element, I would be able to append the matchers 
+together to make one 'super-matcher' that would match everything for a full 
+fragment.  This did not work out, since I didn't quite understand how to append
+ a matcher to begin with.  As I was drastically, drastically running out of 
+time, I then attempted to write a recursive helper function that would run 
+through the derivation just once, and then grab the first element of the 
+derivation so I could use it to form symbols in which I could run basic_deriv
+ with (basic_deriv requires a starting symbol of some sort so you can actually 
+sort through the grammar).  This was not a particularly good way of solving 
+things, especially since that it wasn't actually guaranteed that the first 
+runthrough of the fragment was actually correct, and also because once I 
+actually tried implementing it inside parse_prefix, I got type errors: what 
+would have worked fine if the acceptor and matcher had been provided simply 
+didn't work, because at that point, the function was expecting a list.  
+Without the fragment and acceptor already provided, I had a function.
+
+I then discarded the helper functions and attempted to make the two main 
+recursive functions actually loop through the fragment.  One method I used
+was using flags. Certain 'basic_deriv's and 'grab's would be marked as true, 
+as they were considered 'master functions', which were functions that were 
+actually capable of furthering the derivation, since the fragment given to it 
+actually got shorter with each match (whereas my previous didn't, since I had
+been unsure on how to get my code to go through the fragment without messing up 
+the derivation, as it was completely possible that the code would move on to 
+the next element of the fragment before finding the complete derivation for 
+the first element).  
+
+This did not go well, most likely because I am both short on time and 
+incredibly sleep deprived.  This code is full of weaknesses.  While it,
+at a minimum, compiles, it does not do a very good job of parsing through
+the grammar.  For example: with the test case ["3"], and with the grammar
+given in the spec, my code will actually go with the first rule of Expr, 
+and derive for 3 until it reaches Binop.  At that point, it fails to correct
+itself, and simply returns an incorrect Some.  It also appears to be a case 
+that with starting symbols that have rules that consist of more than one element, 
+the derivation will not actually be correct unless the first rule it runs
+into is correct.  The recursive element also apparently only works for three 
+elements; exactly why remains to be seen.
+
+It appears the only test case that my code works for is ["3"; "+"; "4"], and
+absolutely nothing else.
+
+
+

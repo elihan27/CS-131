@@ -1,0 +1,213 @@
+(* basic type definition *)
+type ('nonterminal, 'terminal) symbol =
+  | N of 'nonterminal
+  | T of 'terminal
+
+
+(*if takes in set d and empty set e, returns version of set d with unique elements*)
+let rec uniq d e =
+	match d with 
+	| [] -> e		
+	| h :: t ->
+		if not(List.mem h e) then 
+			uniq t (h::e)
+			else
+			uniq t e
+
+
+(* helper function for equal sets *)
+let rec subset a b =
+        match a with
+        | [] -> true
+        | h :: t ->
+        	if List.mem h b then
+        		subset t b
+        	else false;; 
+
+
+(* Takes in 2 sets (lists) and compares them *)
+let rec equal_sets a b =
+       (subset a b) && (subset b a);;
+
+(* meant to handle rhs for basic run of terminal types - takes in a symbol, outputs true if terminal, false if nonterminal
+Does not appear to work for cases such as [T"ZZZ"]
+*)
+let term symb = 
+	match symb with
+	| T (_) -> true
+	| N (_) -> false 
+
+
+(*takes in list of rules  - rs - then outputs the initial 'goodList', a list of approved rules*)
+let rec first_run rs goodList =
+	match rs with
+	| [] -> goodList
+	| h::t ->
+		if List.for_all term (snd h) then first_run t (h::goodList)
+		else first_run t goodList;;
+
+(*takes in a list of rules, then outputs an initial 'goodKey', a list of lhs.  Meant to be run on goodList*)
+***********Version1 
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t (List.append (fst h) goodKey);;
+
+************Version 2
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t ((fst h)::goodKey);;
+
+************Version 3
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t ((N (fst h))::goodKey);;
+
+
+(*basic for checking if a symbol is valid, regardless of terminal/nonterminal type*)
+************Version 1
+let non symb goodKey =
+	if (List.mem symb goodKey || term symb) then true else false;;
+************Version 2
+let non symb goodKey =
+	if (List.mem symb goodKey) then true else false;;
+
+(*pass in the rhs of a rule, to check if each member of rhs is valid.  Output true if total rule is valid*)
+let rec validrule symblist goodKey =
+	match symblist with
+	| [] -> true
+	| h::t -> if (non h goodKey) then true && (validrule t goodKey) else false;;
+
+(*Check if a rule is valid, if so add its rhs to goodKey, add the rule itself to goodList*)
+
+********Version 1
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t (List.append (fst h) goodKey) (h::goodList) else app t goodKey goodList;;
+********Version 2
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t ((fst h)::goodKey) (h::goodList) 
+else app t goodKey goodList;;
+********Version 3
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t ((N (fst h))::goodKey) (h::goodList) 
+else app t goodKey goodList;;
+
+
+(*the equivalent of fixed point! takes in rs, and applies app until rs = app(rs) *)
+let rec runthrough app rs goodKey goodList =
+	if equal_sets rs (app rs goodKey goodList) then rs
+	else runthrough app (app rs goodKey goodList) goodKey goodList;;
+
+(*first draft - currently serves as an assembling function for runthrough and outputs a list of valid rules (goodList) - there should be duplcates*)
+
+let filter_blind_alleys g  =
+	(runthrough app (snd g) (keyword (first_run (snd g) []) []) (first_run (snd g) []));;
+
+======================
+
+let goodList = first_run (snd g) []: works as expected
+let goodKey = keyword goodList [];; (use version 2)
+runthrough app (snd g) goodKey goodList
+
+let goodList2 = 
+
+List.rev (uniq ((runthrough app (snd g) (keyword (first_run (snd g) []) []) (first_run (snd g) []))));;
+
+List.rev (uniq (((runthrough app (snd giant_grammar) (keyword (first_run (snd giant_grammar) []) []) (first_run (snd giant_grammar) [])))) []);;
+
+
+let check g = List.rev (uniq (((runthrough app (snd g) (keyword (first_run (snd g) []) []) (first_run (snd g) [])))) []);;
+
+
+let goodList2 = first_run (snd giant_grammar) []
+let goodKey2 = keyword goodList2 [];; (use version 2)
+
+*********True version! (for now)
+
+let beta g = ((fst g),(List.rev (uniq (((runthrough app (snd g) (keyword (first_run (snd g) []) []) (first_run (snd g) [])))) [])));;
+ 
+*********Version 2**********
+let filter_blind_alleys g = ((fst g),(List.rev( reverser (uniq (((runthrough app (snd g) (keyword (first_run (snd g) []) []) (first_run (snd g) [])))) []) (snd g) [])));;
+
+
+
+
+let rec app rs goodKey goodList =
+	
+	match rs with
+	| [] -> goodList
+	| h::t -> if validrule (snd h) goodKey then app t ((N (fst h))::goodKey) (h::goodList) 
+else app t goodKey goodList;;
+
+
+
+======================
+GOODSORT
+
+let rec reverser goodList original sorted =
+	match original with 
+	| [] -> sorted
+	| h::t -> 
+		if List.mem h goodList then reverser goodList t (h::sorted) 
+		else reverser goodList t sorted;;
+
+======================
+
+runthrough VERSION 2:
+
+let rec runthrough app rs goodKey goodList =
+	if equal_sets rs (app rs goodKey goodList) then rs
+	else runthrough app (app rs goodKey goodList) (keyword (app rs goodKey goodList) goodKey) goodList;;
+
+runthrough VERSION 3 //currently working
+
+let rec runthrough app rs goodKey goodList =
+	if equal_sets rs (app rs goodKey goodList) then rs
+	else runthrough app (app rs goodKey goodList) (keyword (app rs goodKey goodList) goodKey) goodList;;
+
+
+runthrough VERSION 4
+
+let rec runthrough app rs goodKey goodList =
+	if equal_sets goodList (app rs goodKey goodList) then goodList
+	else runthrough app rs (keyword (app rs goodKey goodList) goodKey) (app rs goodKey goodList);;
+
+
+======================
+
+let rec app rs goodKey goodList =
+	match rs with
+	| [] -> goodList
+	| h::t -> if (validrule (snd h) goodKey) && not(List.mem h goodList) then app t ((N (fst h))::goodKey) (h::goodList) 
+else app t goodKey goodList;;
+
+
+
+let rec keyword rs goodKey =
+	match rs with 
+	| [] -> goodKey
+	| h::t -> keyword t ((N (fst h))::goodKey);;
+
+
+
+
+
+let goodList2 = first_run (snd giant_grammar) [];;
+let goodKey2 = keyword goodList2 [];;
+
+
+app (snd giant_grammar) goodKey2 goodList2
+
+penny and dime come up the same 
+
+2*2 = 4
+1*1
+
